@@ -1,23 +1,31 @@
 package edu.montana.csci.csci440.model;
 
+import edu.montana.csci.csci440.util.DB;
+
 import java.sql.*;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Employee {
+public class Employee extends Model {
 
+    private Integer employeeId;
     private String firstName;
     private String lastName;
     private String email;
 
-    public Employee(ResultSet results) throws SQLException {
+    public Employee() {
+        // new employee for insert
+    }
+
+    private Employee(ResultSet results) throws SQLException {
         firstName = results.getString("FirstName");
         lastName = results.getString("LastName");
         email = results.getString("Email");
     }
 
-    public static Iterable<Employee> all(int page, int count) {
-        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:db/chinook.db");
+    public static List<Employee> all(int page, int count) {
+        try (Connection conn = DB.connect();
              Statement stmt = conn.createStatement()) {
             ResultSet results = stmt.executeQuery("SELECT * FROM employees");
             List<Employee> resultList = new LinkedList<>();
@@ -28,6 +36,10 @@ public class Employee {
         } catch (SQLException sqlException) {
             throw new RuntimeException(sqlException);
         }
+    }
+
+    public static Employee findByEmail(String newEmailAddress) {
+        throw new UnsupportedOperationException("Implement me");
     }
 
     public String getFirstName() {
@@ -53,4 +65,21 @@ public class Employee {
     public void setEmail(String email) {
         this.email = email;
     }
+
+    public Integer getEmployeeId() {
+        return employeeId;
+    }
+
+    public List<Customer> getCustomers() {
+        return Collections.emptyList();
+    }
+
+    public List<Employee> getReports() {
+        return Collections.emptyList();
+    }
+
+    public Employee getBoss() {
+        return null;
+    }
+
 }
