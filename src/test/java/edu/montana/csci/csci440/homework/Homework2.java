@@ -11,22 +11,21 @@ public class Homework2 extends DBTest {
 
     @Test
     /*
-     * Write a query in the string below that returns all artists that have an 'A' in their name ; Done
-     */ 
+     * Write a query in the string below that returns all artists that have an 'A' in their name
+     */
     void selectArtistsWhoseNameHasAnAInIt(){
-        List<Map<String, Object>> results = executeSQL("SELECT * " +
-                "                                               FROM artists " +
-                "                                               WHERE Name LIKE '%a%'; ");
+        List<Map<String, Object>> results = executeSQL("SELECT * FROM artists");
         assertEquals(211, results.size());
     }
 
     @Test
     /*
-     * Write a query in the string below that returns all artists that have more than one album ; Done
+     * Write a query in the string below that returns all artists that have more than one album
      */
     void selectAllArtistsWithMoreThanOneAlbum(){
         List<Map<String, Object>> results = executeSQL(
-                "SELECT * FROM artists WHERE ArtistId IN (SELECT ArtistId FROM albums GROUP BY ArtistID HAVING COUNT(*) > 1) ");
+                "SELECT * FROM artists");
+
         assertEquals(56, results.size());
         assertEquals("AC/DC", results.get(0).get("Name"));
     }
@@ -34,11 +33,12 @@ public class Homework2 extends DBTest {
     @Test
         /*
          * Write a query in the string below that returns all tracks longer than six minutes along with the
-         * album and artist name ; Done... Passed tests but was there supposed to be more? Didn't have to use join.....
+         * album and artist name
          */
     void selectTheTrackAndAlbumAndArtistForAllTracksLongerThanSixMinutes() {
         List<Map<String, Object>> results = executeSQL(
-                "SELECT tracks.Name as TrackName FROM tracks WHERE Milliseconds > 360000");
+                "SELECT tracks.Name as TrackName, albums.Title as AlbumTitle, artists.Name as ArtistsName FROM tracks " +
+                        "-- NEED TO DO SOME JOINS HERE KIDS");
 
         assertEquals(623, results.size());
 

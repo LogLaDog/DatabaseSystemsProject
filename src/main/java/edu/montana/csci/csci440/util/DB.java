@@ -1,19 +1,26 @@
 package edu.montana.csci.csci440.util;
 
+import edu.montana.csci.csci440.model.Employee;
+import org.sqlite.SQLiteConfig;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class DB {
 
+    private static long CONNECTION_COUNT = 0;
+
     public static Connection connect() throws SQLException {
-        return DriverManager.getConnection("jdbc:sqlite:db/chinook.db");
+        CONNECTION_COUNT++;
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:db/chinook.db");
+        try (Statement statement = connection.createStatement();){
+            statement.execute("PRAGMA foreign_keys = ON");
+        };
+        return connection;
     }
 
     public static void reset() throws IOException {
@@ -26,4 +33,20 @@ public class DB {
         }
     }
 
+    public static long getLastID(Connection conn) {
+        try (PreparedStatement stmt = conn.prepareStatement("SELECT last_insert_rowid() as ID")) {
+            ResultSet results = stmt.executeQuery();
+            if (results.next()) {
+                return results.getLong("ID");
+            } else {
+                throw new IllegalStateException("Could not get last ID");
+            }
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
+        }
+    }
+
+    public static long getConnectionCount() {
+        return CONNECTION_COUNT;
+    }
 }
