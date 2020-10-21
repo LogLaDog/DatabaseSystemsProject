@@ -11,7 +11,9 @@ import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 
 import static spark.Spark.*;
 
@@ -220,7 +222,7 @@ public class Web {
 
     public static void init() {
         before((request, response) -> {
-            System.out.println(">> REQUEST " + request.requestMethod() + " " + request.pathInfo() + getParameterInfo(request));
+            System.out.println(">> REQUEST " + request.requestMethod() + " " + request.pathInfo());
             Web.set(request, response, System.currentTimeMillis());
         });
         after((request, response) -> {
@@ -248,26 +250,6 @@ public class Web {
                     "error", e,
                     "stacktrace", sw.getBuffer().toString()));
         });
-    }
-
-    private static String getParameterInfo(Request request) {
-        Set<String> params = request.queryParams();
-        if (params.size() > 0) {
-            StringBuilder str = new StringBuilder("\n   Parameters: {");
-            Object[] paramsArr = params.toArray();
-            Arrays.sort(paramsArr);
-            for (int i = 0; i < paramsArr.length; i++) {
-                if (i != 0) {
-                    str.append(", ");
-                }
-                Object o = paramsArr[i];
-                str.append(o.toString()).append(":").append(request.queryParams(o.toString()));
-            }
-            str.append("}");
-            return str.toString();
-        } else {
-            return "";
-        }
     }
 
     private static class RequestInfo {

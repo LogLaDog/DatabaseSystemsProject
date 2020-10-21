@@ -2,9 +2,12 @@ package edu.montana.csci.csci440.homework;
 
 import edu.montana.csci.csci440.DBTest;
 import org.junit.jupiter.api.Test;
+
 import java.util.List;
 import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 public class Homework3 extends DBTest {
 
     @Test
@@ -41,17 +44,17 @@ public class Homework3 extends DBTest {
     public void createGrammyInfoTable(){
         //TODO fill these in
         executeDDL("CREATE TABLE grammy_categories(" +
-                "GrammyCategoryId INTEGER NOT NULL PRIMARY KEY," +
-                "Name TEXT);");
+                   "GrammyCategoryId INTEGER NOT NULL PRIMARY KEY," +
+                   "Name TEXT);");
 
         executeDDL("CREATE TABLE grammy_infos(" +
-                "ArtistId INTEGER, " +
-                "AlbumId INTEGER, " +
-                "TrackId INTEGER, " +
-                "GrammyCategoryId INTEGER, " +
-                "Status TEXT," +
-                "FOREIGN KEY (GrammyCategoryId) " +
-                "REFERENCES grammy_categories (GrammyCategoryId));");
+                   "ArtistId INTEGER, " +
+                   "AlbumId INTEGER, " +
+                   "TrackId INTEGER, " +
+                   "GrammyCategoryId INTEGER, " +
+                   "Status TEXT," +
+                   "FOREIGN KEY (GrammyCategoryId) " +
+                   "REFERENCES grammy_categories (GrammyCategoryId));");
 
         // TEST CODE
         executeUpdate("INSERT INTO grammy_categories(Name) VALUES ('Greatest Ever');");
