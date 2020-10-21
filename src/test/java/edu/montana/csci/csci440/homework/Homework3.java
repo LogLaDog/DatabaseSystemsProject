@@ -2,21 +2,30 @@ package edu.montana.csci.csci440.homework;
 
 import edu.montana.csci.csci440.DBTest;
 import org.junit.jupiter.api.Test;
-
 import java.util.List;
 import java.util.Map;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class Homework3 extends DBTest {
 
     @Test
     /*
-     * Create a view tracksPlus to display the artist, song title, album, and genre for all tracks.
+     * Done
      */
     public void createTracksPlusView(){
         //TODO fill this in
-        executeDDL("CREATE VIEW tracksPlus");
+        executeDDL("CREATE VIEW tracksPlus AS " +
+                "SELECT tracks.*, " +
+                "albums.Title as AlbumTitle, " +
+                "artists.Name as ArtistName, " +
+                "genres.Name as GenreName " +
+                "FROM tracks " +
+                "JOIN albums ON " +
+                "tracks.AlbumId = albums.AlbumId " +
+                "JOIN artists ON " +
+                "albums.ArtistId = artists.ArtistId " +
+                "JOIN genres ON " +
+                "tracks.GenreId = genres.GenreID"
+        );
 
         List<Map<String, Object>> results = executeSQL("SELECT * FROM tracksPlus ORDER BY TrackId");
         assertEquals(3503, results.size());
@@ -27,17 +36,22 @@ public class Homework3 extends DBTest {
 
     @Test
     /*
-     * Create a table grammy_infos to track grammy information for an artist.  The table should include
-     * a reference to the artist, the album (if the grammy was for an album) and the song (if the grammy was
-     * for a song).  There should be a string column indicating if the artist was nominated or won.  Finally,
-     * there should be a reference to the grammy_category table
-     *
-     * Create a table grammy_category
+     * Done
      */
     public void createGrammyInfoTable(){
         //TODO fill these in
-        executeDDL("create table grammy_categories");
-        executeDDL("create table grammy_infos");
+        executeDDL("CREATE TABLE grammy_categories(" +
+                "GrammyCategoryId INTEGER NOT NULL PRIMARY KEY," +
+                "Name TEXT);");
+
+        executeDDL("CREATE TABLE grammy_infos(" +
+                "ArtistId INTEGER, " +
+                "AlbumId INTEGER, " +
+                "TrackId INTEGER, " +
+                "GrammyCategoryId INTEGER, " +
+                "Status TEXT," +
+                "FOREIGN KEY (GrammyCategoryId) " +
+                "REFERENCES grammy_categories (GrammyCategoryId));");
 
         // TEST CODE
         executeUpdate("INSERT INTO grammy_categories(Name) VALUES ('Greatest Ever');");
@@ -55,13 +69,15 @@ public class Homework3 extends DBTest {
 
     @Test
     /*
-     * Bulk insert five categories of your choosing in the genres table
+     * Done
      */
     public void bulkInsertGenres(){
         Integer before = (Integer) executeSQL("SELECT COUNT(*) as COUNT FROM genres").get(0).get("COUNT");
 
         //TODO fill this in
-        executeUpdate("INSERT");
+        executeUpdate("INSERT INTO genres (Name) VALUES ('Vaporwave'), ('JazzFusion'), ('Synthwave'), ('FolkMetal'), ('MusicforChickens')");
+
+
 
         Integer after = (Integer) executeSQL("SELECT COUNT(*) as COUNT FROM genres").get(0).get("COUNT");
         assertEquals(before + 5, after);
