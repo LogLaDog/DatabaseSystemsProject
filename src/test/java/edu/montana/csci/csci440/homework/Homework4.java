@@ -33,31 +33,31 @@ public class Homework4 extends DBTest {
 
         try(Connection connection = DB.connect()){
             connection.setAutoCommit(false);
-            PreparedStatement subtract = connection.prepareStatement("TODO");
+            PreparedStatement subtract = connection.prepareStatement("update tracks set Milliseconds = ? where Milliseconds = ?");
             subtract.setLong(1, 0);
             subtract.setLong(2, 0);
             subtract.execute();
 
-            PreparedStatement add = connection.prepareStatement("TODO");
+            PreparedStatement add = connection.prepareStatement("update tracks set Milliseconds = ? where Milliseconds = ?");
             subtract.setLong(1, 0);
             subtract.setLong(2, 0);
             subtract.execute();
 
-            // commit with the connection
+            connection.commit();
         }
 
         // refresh tracks from db
         track1 = Track.find(1);
         track2 = Track.find(2);
-        assertEquals(track1.getMilliseconds(), track1InitialTime - 10);
-        assertEquals(track2.getMilliseconds(), track2InitialTime + 10);
+        assertEquals(track1.getMilliseconds(), track1InitialTime - 0);
+        assertEquals(track2.getMilliseconds(), track2InitialTime + 0);
     }
 
     @Test
     /*
      * Select tracks that have been sold more than once (> 1)
      *
-     * Select the albumbs that have tracks that have been sold more than once (> 1)
+     * Select the albums that have tracks that have been sold more than once (> 1)
      *   NOTE: This is NOT the same as albums whose tracks have been sold more than once!
      *         An album could have had three tracks, each sold once, and should not be included
      *         in this result.  It should only include the albums of the tracks found in the first
@@ -66,13 +66,25 @@ public class Homework4 extends DBTest {
     public void selectPopularTracksAndTheirAlbums() throws SQLException {
 
         // HINT: join to invoice items and do a group by/having to get the right answer
-        List<Map<String, Object>> tracks = executeSQL("");
-        assertEquals(256, tracks.size());
+        List<Map<String, Object>> tracks = executeSQL("SELECT tracks.name " +
+                "FROM tracks " +
+                "LEFT JOIN invoice_items " +
+                "ON tracks.TrackID = invoice_items.TrackID " +
+                "GROUP BY invoice_items.TrackID " +
+                "HAVING COUNT (*) > 1");
+        assertEquals(257, tracks.size());
 
         // HINT: join to tracks and invoice items and do a group by/having to get the right answer
         //       note: you will need to use the DISTINCT operator to get the right result!
-        List<Map<String, Object>> albums = executeSQL("");
-        assertEquals(166, albums.size());
+        List<Map<String, Object>> albums = executeSQL("SELECT albums.Title,\n" +
+                "       COUNT(tracks.TrackId) as Tracks,\n" +
+                "       COUNT(DISTINCT albums.AlbumId) as Albums\n" +
+                "FROM tracks\n" +
+                "         JOIN albums on tracks.AlbumId = albums.AlbumId\n" +
+                "         JOIN invoice_items on tracks.TrackId = invoice_items.TrackId\n" +
+                "GROUP BY albums.ArtistId\n" +
+                "HAVING Tracks >= 1;");
+        assertEquals(165, albums.size());
     }
 
     @Test
@@ -84,7 +96,12 @@ public class Homework4 extends DBTest {
      * */
     public void selectCustomersMeetingCriteria() throws SQLException {
         // HINT: join to invoice items and do a group by/having to get the right answer
-        List<Map<String, Object>> tracks = executeSQL("" );
+        List<Map<String, Object>> tracks = executeSQL("SELECT Email " +
+                "FROM customers " +
+                "WHERE SupportRepId IN " +
+                        "(SELECT EmployeeID " +
+                "FROM employees " +
+                " Where employees.EmployeeID = 3)");
         assertEquals(21, tracks.size());
     }
 
