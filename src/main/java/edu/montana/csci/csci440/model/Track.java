@@ -47,6 +47,68 @@ public class Track extends Model {
         genreId = results.getLong("GenreId");
     }
 
+    public boolean verify() {
+        _errors.clear(); // clear any existing errors
+        if (name == null || "".equals(name)) {
+            addError("Track Name can't be null or blank!");
+        }
+        if (albumId == null || "".equals(albumId)) {
+            addError("Album can't be null or blank!");
+        }
+
+        return !hasErrors();
+    }
+
+    public boolean create() {
+        if (verify()) {
+            try (Connection conn = DB.connect();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "INSERT INTO tracks (Name, AlbumId,MediaTypeId, Milliseconds, UnitPrice) VALUES (?, ?, ?, ?,?)")) {
+                stmt.setString(1, this.getName());
+                stmt.setLong(2, this.getAlbumId());
+                stmt.setLong(3, this.getMediaTypeId());
+                stmt.setLong(4, this.getMilliseconds());
+                stmt.setLong(5, this.getUnitPrice().longValue());
+                stmt.executeUpdate();
+                trackId = DB.getLastID(conn);
+                return true;
+            } catch (SQLException sqlException) {
+                throw new RuntimeException(sqlException);
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public void delete() {
+        try (Connection conn = DB.connect();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "DELETE FROM tracks WHERE TrackId=?")) {
+            stmt.setLong(1, this.getTrackId());
+            stmt.executeUpdate();
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
+        }
+    }
+
+    public boolean update() {
+        if (verify()) {
+            try (Connection conn = DB.connect();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "UPDATE tracks SET Name=? WHERE AlbumId=?")) {
+                stmt.setString(1, this.getName());
+                stmt.setLong(2, this.getAlbumId());
+                stmt.executeUpdate();
+                return true;
+            } catch (SQLException sqlException) {
+                throw new RuntimeException(sqlException);
+            }
+        } else {
+            return false;
+        }
+    }
+
+
     public static Track find(long i) {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement("SELECT * FROM tracks WHERE TrackId=?")) {

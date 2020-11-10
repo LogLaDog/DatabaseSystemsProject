@@ -44,6 +44,9 @@ public class Employee extends Model {
         if (lastName == null || "".equals(lastName)) {
             addError("LastName can't be null!");
         }
+        if (email == null || "".equals(email) || email.indexOf('@') == -1) {
+            addError("Email can't be null!");
+        }
         return !hasErrors();
     }
 
@@ -151,7 +154,7 @@ public class Employee extends Model {
         }
     }
     public Employee getBoss() {
-        //TODO implement
+
         return null;
     }
 
@@ -189,7 +192,18 @@ public class Employee extends Model {
     }
 
     public static Employee findByEmail(String newEmailAddress) {
-        throw new UnsupportedOperationException("Implement me");
+        try (Connection conn = DB.connect();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM employees WHERE Email=?")) {
+            stmt.setString(1, newEmailAddress);
+            ResultSet results = stmt.executeQuery();
+            if (results.next()) {
+                return new Employee(results);
+            } else {
+                return null;
+            }
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
+        }
     }
 
     public static Employee find(long employeeId) {
@@ -212,7 +226,7 @@ public class Employee extends Model {
     }
 
     public void setReportsTo(Employee employee) {
-        // TODO implement
+        this.reportsTo = employee.reportsTo;
     }
 
     public static class SalesSummary {
