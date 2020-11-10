@@ -16,8 +16,7 @@ public class Album extends Model {
     Long artistId;
     String title;
 
-    public Album() {
-    }
+    public Album() {}
 
     private Album(ResultSet results) throws SQLException {
         title = results.getString("Title");
@@ -64,9 +63,22 @@ public class Album extends Model {
     public static List<Album> all(int page, int count) {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "SELECT * FROM albums LIMIT ?"
+                     "SELECT * FROM albums LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
+            if (page == 1) {
+                stmt.setInt(2, 0);
+            }
+            else if (page == 2) {
+                stmt.setInt(2, count);
+            }
+            else if (page > 2) {
+                stmt.setInt(2, (page-1)*count);
+            }
+            else {
+                stmt.setInt(2, 0);
+            }
+
             ResultSet results = stmt.executeQuery();
             List<Album> resultList = new LinkedList<>();
             while (results.next()) {
@@ -77,6 +89,54 @@ public class Album extends Model {
             throw new RuntimeException(sqlException);
         }
     }
+
+    public boolean verify() {
+        _errors.clear(); // clear any existing errors
+        if (title == null || "".equals(title)) {
+            addError("Album Name can't be null or blank!");
+        }
+        if (artistId == null || "".equals(artistId)) {
+            addError("Artist can't be null or blank!");
+        }
+
+        return !hasErrors();
+    }
+
+    public boolean create() {
+        if (verify()) {
+            try (Connection conn = DB.connect();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "INSERT INTO albums (Title, ArtistId) VALUES (?, ?)")) {
+                stmt.setString(1, this.getTitle());
+                stmt.setLong(2, this.getArtistId());
+                stmt.executeUpdate();
+                albumId = DB.getLastID(conn);
+                return true;
+            } catch (SQLException sqlException) {
+                throw new RuntimeException(sqlException);
+            }
+        } else {
+            return false;
+        }
+    }
+
+    public boolean update() {
+        if (verify()) {
+            try (Connection conn = DB.connect();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "UPDATE albums SET Title=? WHERE AlbumId=?")) {
+                stmt.setString(1, this.getTitle());
+                stmt.setLong(2, this.getAlbumId());
+                stmt.executeUpdate();
+                return true;
+            } catch (SQLException sqlException) {
+                throw new RuntimeException(sqlException);
+            }
+        } else {
+            return false;
+        }
+    }
+
 
     public static Album find(long i) {
         try (Connection conn = DB.connect();

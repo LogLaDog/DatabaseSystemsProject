@@ -253,9 +253,21 @@ public class Track extends Model {
     public static List<Track> all(int page, int count, String orderBy) {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "SELECT * FROM tracks LIMIT ?"
+                     "SELECT * FROM tracks LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
+            if (page == 1) {
+                stmt.setInt(2, 0);
+            }
+            else if (page == 2) {
+                stmt.setInt(2, count);
+            }
+            else if (page > 2) {
+                stmt.setInt(2, (page-1)*count);
+            }
+            else {
+                stmt.setInt(2, 0);
+            }
             ResultSet results = stmt.executeQuery();
             List<Track> resultList = new LinkedList<>();
             while (results.next()) {

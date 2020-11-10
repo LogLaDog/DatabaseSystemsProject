@@ -2,11 +2,8 @@ package edu.montana.csci.csci440.model;
 
 import edu.montana.csci.csci440.DBTest;
 import org.junit.jupiter.api.Test;
-
 import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
-
 public class AlbumTest extends DBTest {
 
     @Test
@@ -60,5 +57,4 @@ public class AlbumTest extends DBTest {
         album.update();
         assertEquals(newTitle, Album.find(1).getTitle());
     }
-
 }

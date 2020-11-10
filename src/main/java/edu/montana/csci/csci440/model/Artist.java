@@ -51,8 +51,20 @@ public class Artist extends Model {
     public static List<Artist> all(int page, int count) {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "SELECT * FROM artists LIMIT ?"
-             )) {
+                     "SELECT * FROM artists LIMIT ? OFFSET ?"
+             )) {stmt.setInt(1, count);
+            if (page == 1) {
+                stmt.setInt(2, 0);
+            }
+            else if (page == 2) {
+                stmt.setInt(2, count);
+            }
+            else if (page > 2) {
+                stmt.setInt(2, (page-1)*count);
+            }
+            else {
+                stmt.setInt(2, 0);
+            }
             stmt.setInt(1, count);
             ResultSet results = stmt.executeQuery();
             List<Artist> resultList = new LinkedList<>();
@@ -64,6 +76,45 @@ public class Artist extends Model {
             throw new RuntimeException(sqlException);
         }
     }
+
+    public boolean verify() {
+        _errors.clear(); // clear any existing errors
+        if (name == null || "".equals(name)) {
+            addError("Artist Name can't be null or blank!");
+        }
+        return !hasErrors();
+    }
+
+    public boolean create() {
+            try (Connection conn = DB.connect();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "INSERT INTO artists (Name) VALUES (?)")) {
+                stmt.setString(1, this.getName());
+                stmt.executeUpdate();
+                artistId = DB.getLastID(conn);
+                return true;
+            } catch (SQLException sqlException) {
+                throw new RuntimeException(sqlException);
+            }
+        }
+
+    public boolean update() {
+        if (verify()) {
+            try (Connection conn = DB.connect();
+                 PreparedStatement stmt = conn.prepareStatement(
+                         "UPDATE artists SET Name=? WHERE ArtistId=?")) {
+                stmt.setString(1, this.getName());
+                stmt.setLong(2, this.getArtistId());
+                stmt.executeUpdate();
+                return true;
+            } catch (SQLException sqlException) {
+                throw new RuntimeException(sqlException);
+            }
+        } else {
+            return false;
+        }
+    }
+
 
     public static Artist find(long i) {
         try (Connection conn = DB.connect();

@@ -60,9 +60,23 @@ public class Customer extends Model {
     public static List<Customer> all(int page, int count) {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "SELECT * FROM customers LIMIT ?"
+                     "SELECT * FROM customers LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
+            if (page == 1) {
+                stmt.setInt(2, 0);
+            }
+            else if (page == 2) {
+                stmt.setInt(2, count);
+            }
+            else if (page > 2) {
+                stmt.setInt(2, (page-1)*count);
+            }
+            else {
+                stmt.setInt(2, 0);
+            }
+
+
             ResultSet results = stmt.executeQuery();
             List<Customer> resultList = new LinkedList<>();
             while (results.next()) {
