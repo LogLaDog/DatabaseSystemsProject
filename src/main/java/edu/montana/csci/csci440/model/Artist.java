@@ -15,6 +15,7 @@ public class Artist extends Model {
 
     Long artistId;
     String name;
+    int Version = 0;
 
     public Artist() {
     }
@@ -27,6 +28,7 @@ public class Artist extends Model {
     public List<Album> getAlbums(){
         return Album.getForArtist(artistId);
     }
+
 
     public Long getArtistId() {
         return artistId;
@@ -98,23 +100,27 @@ public class Artist extends Model {
             }
         }
 
-    public boolean update() {
-        if (verify()) {
-            try (Connection conn = DB.connect();
-                 PreparedStatement stmt = conn.prepareStatement(
-                         "UPDATE artists SET Name=? WHERE ArtistId=?")) {
-                stmt.setString(1, this.getName());
-                stmt.setLong(2, this.getArtistId());
-                stmt.executeUpdate();
-                return true;
-            } catch (SQLException sqlException) {
-                throw new RuntimeException(sqlException);
-            }
-        } else {
-            return false;
-        }
-    }
 
+    public boolean update() {
+        if (Version == 0) {
+            if (verify()) {
+                try (Connection conn = DB.connect();
+                     PreparedStatement stmt = conn.prepareStatement(
+                             "UPDATE artists SET Name=? WHERE ArtistId=?")) {
+                    stmt.setString(1, this.getName());
+                    stmt.setLong(2, this.getArtistId());
+                    stmt.executeUpdate();
+                    Version++;
+                    return true;
+
+                } catch (SQLException sqlException) {
+                    throw new RuntimeException(sqlException);
+                }
+            } else {
+                return false;
+            }
+        }return false;
+    }
 
     public static Artist find(long i) {
         try (Connection conn = DB.connect();

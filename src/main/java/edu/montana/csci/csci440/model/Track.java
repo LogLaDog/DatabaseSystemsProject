@@ -25,6 +25,8 @@ public class Track extends Model {
     private Long milliseconds;
     private Long bytes;
     private BigDecimal unitPrice;
+    private String ArtistName;
+    private String AlbumName;
 
     public static final String REDIS_CACHE_KEY = "cs440-tracks-count-cache";
 
@@ -45,6 +47,8 @@ public class Track extends Model {
         albumId = results.getLong("AlbumId");
         mediaTypeId = results.getLong("MediaTypeId");
         genreId = results.getLong("GenreId");
+        ArtistName =  getAlbum().getArtist().getName();
+        AlbumName = getAlbum().getTitle();
     }
 
     public boolean verify() {
@@ -149,9 +153,8 @@ public class Track extends Model {
     public Genre getGenre() {
         return null;
     }
-    public List<Playlist> getPlaylists(){
-        return Collections.emptyList();
-    }
+    public List<Playlist> getPlaylists(){ return Playlist.forTrack(trackId);}
+
 
     public Long getTrackId() {
         return trackId;
@@ -222,15 +225,11 @@ public class Track extends Model {
     }
 
     public String getArtistName() {
-        // TODO implement more efficiently
-        //  hint: cache on this model object
-        return getAlbum().getArtist().getName();
+        return ArtistName;
     }
 
     public String getAlbumTitle() {
-        // TODO implement more efficiently
-        //  hint: cache on this model object
-        return getAlbum().getTitle();
+        return AlbumName;
     }
 
     public static List<Track> advancedSearch(int page, int count,
@@ -303,6 +302,22 @@ public class Track extends Model {
         }
     }
 
+    public static List<Track> forPlaylist(Long playlistId) {
+        String query = "SELECT * FROM tracks WHERE trackId IN (SELECT playlist_track.TrackId FROM playlist_track WHERE PlaylistId = ?) ORDER BY Name";
+        try (Connection conn = DB.connect();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setLong(1, playlistId);
+            ResultSet results = stmt.executeQuery();
+            List<Track> resultList = new LinkedList<>();
+            while (results.next()) {
+                resultList.add(new Track(results));
+            }
+            return resultList;
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
+        }
+    }
+
     // Sure would be nice if java supported default parameter values
     public static List<Track> all() {
         return all(0, Integer.MAX_VALUE);
@@ -315,7 +330,7 @@ public class Track extends Model {
     public static List<Track> all(int page, int count, String orderBy) {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "SELECT * FROM tracks LIMIT ? OFFSET ?"
+                     "SELECT * FROM tracks ORDER BY Milliseconds LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
             if (page == 1) {
