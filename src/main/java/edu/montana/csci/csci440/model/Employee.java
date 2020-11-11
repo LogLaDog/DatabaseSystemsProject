@@ -31,8 +31,24 @@ public class Employee extends Model {
     }
 
     public static List<Employee.SalesSummary> getSalesSummaries() {
-        //TODO - a GROUP BY query to determine the sales (look at the invoices table), using the SalesSummary class
-        return Collections.emptyList();
+        try (Connection conn = DB.connect();
+             PreparedStatement stmt = conn.prepareStatement("" +
+                     "SELECT employees.*, ROUND(SUM(i.Total),2) AS SalesTotal, COUNT(i.Total) AS SalesCount " + //complex sql query to join tables and get sales summaries. Group by!
+                     "FROM employees " +
+                     "INNER JOIN customers c on employees.EmployeeId = c.SupportRepId "+
+                     "INNER JOIN invoices i on c.CustomerId = i.CustomerId "+
+                     "GROUP BY employees.FirstName "
+             ))
+        {
+            ResultSet results = stmt.executeQuery();
+            List<Employee.SalesSummary> resultList = new LinkedList<>();
+            while (results.next()) {
+                resultList.add(new SalesSummary(results));
+            }
+            return resultList;
+        } catch(SQLException sqlException) {
+            throw new RuntimeException(sqlException);
+        }
     }
 
     @Override
@@ -44,7 +60,7 @@ public class Employee extends Model {
         if (lastName == null || "".equals(lastName)) {
             addError("LastName can't be null!");
         }
-        if (email == null || "".equals(email) || email.indexOf('@') == -1) {
+        if (email == null || "".equals(email) || email.indexOf('@') == -1) { //check for the @@@@@@
             addError("Email can't be null!");
         }
         return !hasErrors();
@@ -55,7 +71,7 @@ public class Employee extends Model {
         if (verify()) {
             try (Connection conn = DB.connect();
                  PreparedStatement stmt = conn.prepareStatement(
-                         "UPDATE employees SET FirstName=?, LastName=?, Email=? WHERE EmployeeId=?")) {
+                         "UPDATE employees SET FirstName=?, LastName=?, Email=? WHERE EmployeeId=?")) { //simple update query
                 stmt.setString(1, this.getFirstName());
                 stmt.setString(2, this.getLastName());
                 stmt.setString(3, this.getEmail());
@@ -75,7 +91,7 @@ public class Employee extends Model {
         if (verify()) {
             try (Connection conn = DB.connect();
                  PreparedStatement stmt = conn.prepareStatement(
-                         "INSERT INTO employees (FirstName, LastName, Email) VALUES (?, ?, ?)")) {
+                         "INSERT INTO employees (FirstName, LastName, Email) VALUES (?, ?, ?)")) { //simple create query
                 stmt.setString(1, this.getFirstName());
                 stmt.setString(2, this.getLastName());
                 stmt.setString(3, this.getEmail());
@@ -94,7 +110,7 @@ public class Employee extends Model {
     public void delete() {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "DELETE FROM employees WHERE EmployeeID=?")) {
+                     "DELETE FROM employees WHERE EmployeeID=?")) { //delete query by employeeId
             stmt.setLong(1, this.getEmployeeId());
             stmt.executeUpdate();
         } catch (SQLException sqlException) {
@@ -154,9 +170,8 @@ public class Employee extends Model {
         }
     }
     public Employee getBoss() {
-
-        return null;
-    }
+        return find(getReportsTo());
+    } //this took me 2 hours
 
     public static List<Employee> all() {
         return all(0, Integer.MAX_VALUE);
@@ -168,7 +183,7 @@ public class Employee extends Model {
                      "SELECT * FROM employees LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
-            if (page == 1) {
+            if (page == 1) {  //paging, starts from 0 for page 1, adds count for 2nd page, and then multiplies count for an unlimited number of subsequent pages
                 stmt.setInt(2, 0);
             }
             else if (page == 2) {
@@ -226,7 +241,7 @@ public class Employee extends Model {
     }
 
     public void setReportsTo(Employee employee) {
-        this.reportsTo = employee.reportsTo;
+        this.reportsTo = employee.getEmployeeId();
     }
 
     public static class SalesSummary {
@@ -235,6 +250,7 @@ public class Employee extends Model {
         private String email;
         private Long salesCount;
         private BigDecimal salesTotals;
+
         private SalesSummary(ResultSet results) throws SQLException {
             firstName = results.getString("FirstName");
             lastName = results.getString("LastName");

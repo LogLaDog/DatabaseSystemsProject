@@ -103,7 +103,7 @@ public class Invoice extends Model {
                      "SELECT * FROM invoices LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
-            if (page == 1) {
+            if (page == 1) {  //paging, starts from 0 for page 1, adds count for 2nd page, and then multiplies count for an unlimited number of subsequent pages
                 stmt.setInt(2, 0);
             }
             else if (page == 2) {

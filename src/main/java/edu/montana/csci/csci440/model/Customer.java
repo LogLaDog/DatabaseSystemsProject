@@ -64,7 +64,7 @@ public class Customer extends Model {
                      "SELECT * FROM customers LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
-            if (page == 1) {
+            if (page == 1) {  //paging, starts from 0 for page 1, adds count for 2nd page, and then multiplies count for an unlimited number of subsequent pages
                 stmt.setInt(2, 0);
             }
             else if (page == 2) {
@@ -104,7 +104,7 @@ public class Customer extends Model {
         }
     }
 
-    public static List<Customer> forEmployee(long employeeId) {
+    public static List<Customer> forEmployee(long employeeId) { //This is a custom method to return customer data for the employee page
         String query = "SELECT * FROM customers WHERE SupportRepId=?";
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(query)) {

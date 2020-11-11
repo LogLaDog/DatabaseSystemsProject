@@ -51,7 +51,7 @@ public class Track extends Model {
         AlbumName = getAlbum().getTitle();
     }
 
-    public boolean verify() {
+    public boolean verify() { //check for blanks
         _errors.clear(); // clear any existing errors
         if (name == null || "".equals(name)) {
             addError("Track Name can't be null or blank!");
@@ -64,17 +64,19 @@ public class Track extends Model {
     }
 
     public boolean create() {
+        Jedis redisClient = new Jedis(); //flush redis db
+        redisClient.flushDB();
         if (verify()) {
             try (Connection conn = DB.connect();
                  PreparedStatement stmt = conn.prepareStatement(
-                         "INSERT INTO tracks (Name, AlbumId,MediaTypeId, Milliseconds, UnitPrice) VALUES (?, ?, ?, ?,?)")) {
+                         "INSERT INTO tracks (Name, AlbumId,MediaTypeId, Milliseconds, UnitPrice) VALUES (?, ?, ?, ?,?)")) { //simple query to insert into tracks
                 stmt.setString(1, this.getName());
                 stmt.setLong(2, this.getAlbumId());
                 stmt.setLong(3, this.getMediaTypeId());
                 stmt.setLong(4, this.getMilliseconds());
                 stmt.setLong(5, this.getUnitPrice().longValue());
                 stmt.executeUpdate();
-                trackId = DB.getLastID(conn);
+                trackId = DB.getLastID(conn); //set track id
                 return true;
             } catch (SQLException sqlException) {
                 throw new RuntimeException(sqlException);
@@ -87,7 +89,7 @@ public class Track extends Model {
     public void delete() {
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(
-                     "DELETE FROM tracks WHERE TrackId=?")) {
+                     "DELETE FROM tracks WHERE TrackId=?")) { //simple delete query by trackId
             stmt.setLong(1, this.getTrackId());
             stmt.executeUpdate();
         } catch (SQLException sqlException) {
@@ -96,10 +98,12 @@ public class Track extends Model {
     }
 
     public boolean update() {
+        Jedis redisClient = new Jedis();
+        redisClient.flushDB();
         if (verify()) {
             try (Connection conn = DB.connect();
                  PreparedStatement stmt = conn.prepareStatement(
-                         "UPDATE tracks SET Name=? WHERE AlbumId=?")) {
+                         "UPDATE tracks SET Name=? WHERE AlbumId=?")) { //simply query to update based on albumId
                 stmt.setString(1, this.getName());
                 stmt.setLong(2, this.getAlbumId());
                 stmt.executeUpdate();
@@ -129,12 +133,18 @@ public class Track extends Model {
     }
 
     public static Long count() {
-        Jedis redisClient = new Jedis(); // use this class to access redis and create a cache
+        Jedis redisClient = new Jedis(); //redis integration
+        String stringVal = redisClient.get(REDIS_CACHE_KEY);
+        if(stringVal != null){
+            return Long.parseLong(stringVal);
+        }
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement("SELECT COUNT(*) as Count FROM tracks")) {
             ResultSet results = stmt.executeQuery();
             if (results.next()) {
-                return results.getLong("Count");
+                long count = results.getLong("Count");
+                redisClient.set(REDIS_CACHE_KEY, Long.toString(count)); //more redis integration, stores the count as a string!
+                return count;
             } else {
                 throw new IllegalStateException("Should find a count!");
             }
@@ -302,7 +312,7 @@ public class Track extends Model {
         }
     }
 
-    public static List<Track> forPlaylist(Long playlistId) {
+    public static List<Track> forPlaylist(Long playlistId) { //custom function for track data on the playlist page
         String query = "SELECT * FROM tracks WHERE trackId IN (SELECT playlist_track.TrackId FROM playlist_track WHERE PlaylistId = ?) ORDER BY Name";
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -318,7 +328,6 @@ public class Track extends Model {
         }
     }
 
-    // Sure would be nice if java supported default parameter values
     public static List<Track> all() {
         return all(0, Integer.MAX_VALUE);
     }
@@ -333,7 +342,7 @@ public class Track extends Model {
                      "SELECT * FROM tracks ORDER BY Milliseconds LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
-            if (page == 1) {
+            if (page == 1) { //paging, starts from 0 for page 1, adds count for 2nd page, and then multiplies count for an unlimited number of subsequent pages
                 stmt.setInt(2, 0);
             }
             else if (page == 2) {

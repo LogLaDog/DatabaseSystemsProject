@@ -40,6 +40,10 @@ public class Album extends Model {
         return albumId;
     }
 
+    public void setArtistId(Long artistId) {
+        this.artistId = artistId;
+    }
+
     public void setAlbum(Album album) {
         this.albumId = album.getAlbumId();
     }
@@ -134,6 +138,17 @@ public class Album extends Model {
             }
         } else {
             return false;
+        }
+    }
+
+    public void delete() {
+        try (Connection conn = DB.connect();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "DELETE FROM albums WHERE albumId=?")) {
+            stmt.setLong(1, this.getAlbumId());
+            stmt.executeUpdate();
+        } catch (SQLException sqlException) {
+            throw new RuntimeException(sqlException);
         }
     }
 

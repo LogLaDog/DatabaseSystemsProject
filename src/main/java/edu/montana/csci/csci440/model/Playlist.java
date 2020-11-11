@@ -22,7 +22,7 @@ public class Playlist extends Model {
         playlistId = results.getLong("PlaylistId");
     }
 
-    public static List<Playlist> forTrack(Long trackId) {
+    public static List<Playlist> forTrack(Long trackId) { // complex query for having playlist data on the track page
         String query = "SELECT * FROM playlists WHERE PlaylistId IN (SELECT playlist_track.PlaylistId FROM playlist_track WHERE TrackId = ?)";
         try (Connection conn = DB.connect();
              PreparedStatement stmt = conn.prepareStatement(query)) {
@@ -65,7 +65,7 @@ public class Playlist extends Model {
                      "SELECT * FROM playlists LIMIT ? OFFSET ?"
              )) {
             stmt.setInt(1, count);
-            if (page == 1) {
+            if (page == 1) {  //paging, starts from 0 for page 1, adds count for 2nd page, and then multiplies count for an unlimited number of subsequent pages
                 stmt.setInt(2, 0);
             }
             else if (page == 2) {
